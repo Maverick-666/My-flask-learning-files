@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+    <title>哈密瓜视频</title>
+</head>
+<body>
+    <h1>======正在检测您的年龄======</h1>
+    <h1>您的年龄是{{age}}岁</h1>
+    {% if age >= 18 %}
+    <h1>您已经成年，允许起飞</h1>
+    <h2>
+        <img alt="Avatar" class="avatar" src="{{ url_for('static', filename='images/avatar.png') }}">
+        请选择您想观看的电影
+    </h2>
+    {{movies| length}} titles
+    <ul class="movie-list">
+        {% for movie in movies %}
+       <li><h2>电影名： {{movie.title}}  / 上映时间：{{movie.year}}</h2></li>
+        {% endfor %}
+    </ul>
+    {% elif age < 18 %}
+    <h1>您未满18岁,不允许起飞</h1>
+    {% endif %}
+    <footer>
+        <small>&copy; 2025 <a href="http://helloflask.com/book/3">本网站解释权归Maverick所有</a></small>
+    </footer>
+</body>
+</html>
+    

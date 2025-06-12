@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{%block title%}默认标题{%endblock%}</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='css/style2.css')}}">
+</head> 
+<body>
+    <ul>
+        <li><a href="#">首页</a></li>
+        <li><a href="#">新闻</a></li>
+    </ul>
+    <h2>{%block content%}默认内容{%endblock%}</h2>
+    <footer>
+        <small>{%block footer%}&copy; 2025 <a href="http://helloflask.com/book/3">本网站解释权归Maverick所有</a>{%endblock%}</small>
+    </footer>
+</body>
+</html>

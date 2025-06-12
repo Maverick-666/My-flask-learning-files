@@ -8,16 +8,59 @@ from faker import Faker
 
 app = Flask(__name__)
 
+# 创建book类
+class books:
+
+    def __init__(self,name,price):
+        self.name = name
+        self.price = price
 
 @app.route('/')
 def index():
     return render_template('index.html',name=name,movies=movies)
 
-@app.route("/hello",methods=['GET','POST'])
-def hello():
-    name = request.args.get("name", "Flask")
-    return '<h1>Hello Totoro!</h1><img src="http://helloflask.com/totoro.gif">'
+# 第一种传参，查询字符串/blog?blog_id=10&username=Alice
+@app.route("/blog")
+def blog_detail():
+     blog_id = request.args.get("blog_id",default=1,type=int)
+     my_name = request.args.get("username",default="Maverick",type=str)
+     return render_template("blog_detail.html",blog_id = blog_id, my_name = my_name,another_information = '今天是2025年6月12日')
 
+#查询字符串的方式传参 2
+@app.route("/book/list",methods=['GET','POST'])
+def hello():
+    # arguements: 参数
+    # request.args: 类字典类型
+    page = request.args.get("page", default=1,type=int) # request能够获取输入的信息，默认值是1
+    return f'<h1>您获取的是第{page}页的图书列表</h1><img src="http://helloflask.com/totoro.gif">'
+
+# 第二种传参，使用动态路由
+@app.route("/secret_page/<password>", methods = ['GET','POST'])
+def secret(password):
+    book = books('secrets of the world','999$')
+    return render_template("secret_page.html",password = password, book = book)
+
+# jinja的条件控制
+@app.route("/control")
+def age_control():
+    age = request.args.get("age", default= 17, type=int)
+    return render_template("control.html",age = age,movies = movies)
+
+# jinja的模板继承
+@app.route("/child1")
+def child1():
+    return render_template("child_1.html")
+
+# jinja的模板继承2
+@app.route("/child2")
+def child2():
+    return render_template("child_2.html")    
+
+# jinja的静态文件
+@app.route("/static")
+def static_demo():
+    return render_template("static.html")
+     
 
 @app.route('/submit', methods=['POST'])
 def submit():
