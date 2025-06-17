@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户添加成功</title>
+</head>
+<body>
+<h1>
+    {% for movie in movies %}
+        电影名：{{ movie.title }}<br> / 电影时长：{{ movie.year }}
+        <br>
+    {% endfor %}
+</h1>
+</body>
+</html>

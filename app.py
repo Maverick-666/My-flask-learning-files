@@ -5,8 +5,138 @@ from flask import request
 from flask import redirect
 from flask import render_template
 from faker import Faker
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 
 app = Flask(__name__)
+
+# MySQL所在的主机名
+HOSTNAME = "127.0.0.1"
+# MySQL监听的端口号，默认3306
+PORT = 3306
+# 连接MySQL的用户名，读者用自己的
+USERNAME = "Maverick"
+# 连接MySQL的密码
+PASSWORD = "root"
+# MySQL上创建的数据库名称
+DATABASE = "database_learn"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8mb4"
+
+
+# 在app.config中设置好链接数据库的信息
+# 然后使用SQLALchemy(app)创建一个db对象
+# SQLAlchemy会自动读取app.config中链接数据库的信息
+db = SQLAlchemy(app)
+
+# with app.app_context():
+#     with db.engine.connect() as conn:
+#         rs = conn.execute(text("select 1"))
+#         print(rs.fetchone())
+
+class User(db.Model):
+    __tablename__ = "user"
+    id  = db.Column(db.Integer, primary_key=True,autoincrement = True) # id是整形
+    # varchar
+    username = db.Column(db.String(100), nullable = False)
+    password = db.Column(db.String(100), nullable = False)
+
+    # articles = db.relationship("Article", back_populates="author") #上下需要一一对应
+
+# sql: insert user（username, password) values('Maverick', 'root')
+
+class Article(db.Model):
+    __tablename__ = "article"
+    id = db.Column(db.Integer, primary_key=True,autoincrement = True)
+    title = db.Column(db.String(200), nullable = False)
+    content = db.Column(db.Text, nullable = False)
+
+    # 添加作者的外键，上面是整形，下面也要是整形
+    author_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    # author = db.relationship("User", back_populates="articles")
+
+    # backref： 自动地給User模型添加一个articles地属性,用来获取文章列表
+    author = db.relationship("User", backref = "articles")
+
+
+# article = Article(title = "Flask 学习", content = "我喜欢学Flask")
+# article.author_id = user.id
+# user = User.query.get(article.author_id)
+# article.author = User.query.get(article.author_id)
+# print(article.author)
+# sqlalchemy/flask
+
+
+
+with app.app_context(): # 应用上下文
+    db.create_all()
+
+
+
+# 实现增删改查操作
+@app.route("/user/add")
+def add_user():
+    # 1、创建ORM对象
+    user = User(username = "Maverick", password = "root")
+    # 将ORM对象添加到db.session中
+    db.session.add(user)
+    # 3、将db.session中的改变同步到数据库中
+    db.session.commit()
+    return render_template("add.html",movies = movies)
+
+@app.route("/user/query")
+def query_user():
+    # 1、get查找
+    # user = User.query.get(1)
+    #     # print(f"{user.id}: {user.username}--{user.password}")
+    # 2、filter_by查找
+    # Query 类列表对象
+    users = User.query.filter_by(username = "Maverick")
+    for user in users:
+        print(user.username)
+    return "数据查找成功"
+
+
+@app.route("/user/update")
+def update_user():
+    user = User.query.filter_by(username = "Maverick").first()
+    user.password = "root1"
+    # 同步到数据库
+    db.session.commit()
+    return "数据修改成功"
+
+@app.route("/user/delete")
+def delete_user():\
+    # 查找
+    # user = User.query.get(1)
+    user = User.query.filter_by(password = "root").first() #可以选择按照键删除
+    # 删除
+    db.session.delete(user)
+    # 同步
+    db.session.commit()
+    return "数据已删除"
+
+@app.route("/article/add")
+def add_article():
+    article1 = Article(title = "Flask 学习", content = "我喜欢学Flask")
+    article1.author = User.query.get(1)
+
+    article2 = Article(title="Django 学习", content="我喜欢学Django")
+    article2.author = User.query.get(1)
+
+    # 添加到session中
+    db.session.add_all([article1, article2])
+    db.session.commit()
+
+    return "文章添加成功"
+
+@app.route("/article/query")
+def query_article():
+    user = User.query.get(1)
+    for article in user.articles:
+        print(article.title)
+    return "文章查找成功"
+
 
 # 创建book类
 class books:
