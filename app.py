@@ -1,3 +1,5 @@
+from inspect import signature
+
 from flask import Flask
 from markupsafe import escape # 防止用户恶意输入
 from flask import url_for # 生成动态的URL
@@ -147,8 +149,16 @@ class books:
 
 @app.route('/')
 def index():
-    return render_template('index.html',name=name,movies=movies)
+    signature1 = '<script>alert("Hello")</script>'
+    persons = ['ybx','hh']
+    hello1 = ['h','e','l','l','o']
+    str1 = 'hello world'
+    return render_template('index.html', name = name, movies = movies, signature1 = signature1, persons = persons, hello1 = hello1, str1 = str1)
 
+
+"""
+如果你的这个页面想要做“SEO”优化，就是被搜索引擎搜索到，那么推荐使用path的形式。如果你不在乎，那么就可以使用第二种（查询字符串的形式）
+"""
 # 第一种传参，查询字符串/blog?blog_id=10&username=Alice
 @app.route("/blog")
 def blog_detail():
@@ -164,11 +174,26 @@ def hello():
     page = request.args.get("page", default=1,type=int) # request能够获取输入的信息，默认值是1
     return f'<h1>您获取的是第{page}页的图书列表</h1><img src="http://helloflask.com/totoro.gif">'
 
-# 第二种传参，使用动态路由
-@app.route("/secret_page/<password>", methods = ['GET','POST'])
-def secret(password):
-    book = books('secrets of the world','999$')
-    return render_template("secret_page.html",password = password, book = book)
+# 第二种传参，使用动态路由，而且使用了更安全的post方法
+@app.route("/secret_page/", methods = ['POST','GET'])
+def secret():
+    if request.method == "GET":
+        book = books('secrets of the world',price='999')
+        context = {
+            'book': book,
+            'signature' : request.args.get("signature"),
+        }
+        return render_template("secret_page.html", **context)
+    else:
+        return 'success'
+
+# any的用法
+@app.route('/<any(yellow,green):url_path>/<id>/')
+def same_url(url_path,id):
+    if url_path == 'yellow':
+        return f'<h1>黄色界面的{id}</h1>'
+    else:
+        return f'<h1>绿色界面的{id}</h1>'
 
 # jinja的条件控制
 @app.route("/control")
@@ -229,6 +254,19 @@ def redirect_to_another_website():
 def redirect_to_another_website2():
     return redirect("https://github.com/")
 
+# 重定向的一个简单例子,非常有实际意义
+@app.route('/account/login/<id>')
+def login(id):
+    return render_template('login.html')
+
+@app.route('/profile')
+def profile():
+    name1 = request.args.get("name")
+    if not name1:
+        return redirect(url_for('login'))
+    else:
+        return name1
+
 fake = Faker()
 name = fake.name()
 movies = [
@@ -243,3 +281,25 @@ movies = [
     {'title': 'WALL-E', 'year': '2008'},
     {'title': 'The Pork of Music', 'year': '2012'},
 ]
+
+@app.get('/variables')
+def variables():
+    hobby= "玩游戏"
+    my_book = books(name= "good luck",price= 2000)
+    people = {
+        "name" : "龙逍遥",
+        "height" : "185cm"
+    }
+    context = {
+        "hobby" : hobby,
+        "my_book" : my_book,
+        "people" : people,
+    }
+    return render_template("variables.html",**context) #更加清晰,两个星号相当于关键字传参
+
+# 自定义过滤器
+@app.template_filter("dateformat")
+def dateformat(value, format="%Y-%m-%d %H:%M"):
+    return value.strftime(format)
+
+

@@ -7,6 +7,23 @@
     <title>{{ name }}'s Watchlist</title>
 </head>
 <body>
+
+
+{#autoescape off会关闭自动转义，比如'<'会不被转译成特殊字符#}
+{#加了escape会启动自动转义#}
+{% autoescape off %}
+    <p>个性签名：{{ signature1 |escape }}</p>
+{% endautoescape %}
+{#safe也会关闭自动转义标签#}
+<p>个性签名：{{ signature1 | safe }}</p>
+
+<h1>{{ persons | first }}</h1>
+<h1>{{ persons | last }}</h1>
+<h1>{{ hello1 | replace('l','x') }}</h1>
+<h1>{{ str1 | truncate(length=4) }}</h1>
+{#去除所有标签#}
+<h1>{{ signature1 | striptags }}</h1>
+
     <h2>
         <img alt="Avatar" class="avatar" src="{{ url_for('static', filename='images/avatar.png') }}">
         {{ name }}'s Watchlist
@@ -14,7 +31,14 @@
     
     {# 使用 length 过滤器获取 movies 变量的长度 #}
     <p>{{ movies|length }} Titles</p>
-    
+
+
+{#      {{ 用来存放变量 }} #}
+{#    {% 用来执行函数或逻辑代码 %} #}
+{#    <p><a href="/login/">登录</a></p>#}
+    <p><a href="{{ url_for('login',ref='/',id='1') }}">登录</a></p>
+
+
     <ul class="movie-list">
         {% for movie in movies %}  {# 迭代 movies 变量 #}
         <li>{{ movie.title }} - {{ movie.year }}</li>  {# 等同于 movie['title'] #}

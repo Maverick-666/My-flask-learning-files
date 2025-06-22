@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试一下变量,以及宏和import语句</title>
+</head>
+<body>
+{% import 'forms.html' as forms %}
+<dl>
+    <dt>Username</dt>
+    <dd>{{ forms.input('username')}}</dd>
+    <dt>Password</dt>
+    <dd>{{ forms.input('password',type='password')}}</dd>
+</dl>
+<p>{{ forms.textarea('comment') }}</p>
+<h1>
+    {{ people.name }} 是一个 {{ people.height }}  的人，他喜欢{{ hobby }}也喜欢看{{ my_book.name }},价格是{{ my_book.price }}元
+</h1>
+</body>
+</html>
