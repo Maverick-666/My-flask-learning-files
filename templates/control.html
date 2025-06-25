@@ -3,12 +3,13 @@
 <head>
     <meta charset="utf-8">
     <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style1.css') }}" type="text/css">
     <title>哈密瓜视频</title>
 </head>
 <body>
     <h1>======正在检测您的年龄======</h1>
     <h1>您的年龄是{{age}}岁</h1>
+
     {% if age >= 18 %}
     <h1>您已经成年，允许起飞</h1>
     <h2>

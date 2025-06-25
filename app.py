@@ -1,272 +1,69 @@
-from inspect import signature
+# -*- coding: utf-8 -*-
 
-from flask import Flask
-from markupsafe import escape # 防止用户恶意输入
-from flask import url_for # 生成动态的URL
-from flask import request
-from flask import redirect
-from flask import render_template
+# ==============================================================================
+# 1. 模块导入
+# 导入所有需要的库和模块
+# ==============================================================================
+import datetime
+from flask import Flask, url_for, request, redirect, render_template
+from markupsafe import escape
 from faker import Faker
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
 
+# ==============================================================================
+# 2. 应用初始化和配置
+# 创建Flask应用实例并进行相关配置，包括数据库连接
+# ==============================================================================
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# MySQL所在的主机名
+# MySQL数据库配置
 HOSTNAME = "127.0.0.1"
-# MySQL监听的端口号，默认3306
 PORT = 3306
-# 连接MySQL的用户名，读者用自己的
-USERNAME = "Maverick"
-# 连接MySQL的密码
-PASSWORD = "root"
-# MySQL上创建的数据库名称
-DATABASE = "database_learn"
+USERNAME = "Maverick"  # 请替换为你自己的用户名
+PASSWORD = "root"  # 请替换为你自己的密码
+DATABASE = "database_learn"  # 请替换为你自己的数据库名
+app.config[
+    'SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8mb4"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 推荐关闭，以减少性能开销
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOSTNAME}:{PORT}/{DATABASE}?charset=utf8mb4"
-
-
-# 在app.config中设置好链接数据库的信息
-# 然后使用SQLALchemy(app)创建一个db对象
-# SQLAlchemy会自动读取app.config中链接数据库的信息
+# 初始化SQLAlchemy
 db = SQLAlchemy(app)
 
-# with app.app_context():
-#     with db.engine.connect() as conn:
-#         rs = conn.execute(text("select 1"))
-#         print(rs.fetchone())
 
+# ==============================================================================
+# 3. 数据库模型定义 (Models)
+# 定义所有与数据库表对应的ORM类
+# ==============================================================================
 class User(db.Model):
     __tablename__ = "user"
-    id  = db.Column(db.Integer, primary_key=True,autoincrement = True) # id是整形
-    # varchar
-    username = db.Column(db.String(100), nullable = False)
-    password = db.Column(db.String(100), nullable = False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
-    # articles = db.relationship("Article", back_populates="author") #上下需要一一对应
-
-# sql: insert user（username, password) values('Maverick', 'root')
 
 class Article(db.Model):
     __tablename__ = "article"
-    id = db.Column(db.Integer, primary_key=True,autoincrement = True)
-    title = db.Column(db.String(200), nullable = False)
-    content = db.Column(db.Text, nullable = False)
-
-    # 添加作者的外键，上面是整形，下面也要是整形
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    # author = db.relationship("User", back_populates="articles")
-
-    # backref： 自动地給User模型添加一个articles地属性,用来获取文章列表
-    author = db.relationship("User", backref = "articles")
+    author = db.relationship("User", backref="articles")
 
 
-# article = Article(title = "Flask 学习", content = "我喜欢学Flask")
-# article.author_id = user.id
-# user = User.query.get(article.author_id)
-# article.author = User.query.get(article.author_id)
-# print(article.author)
-# sqlalchemy/flask
+# ==============================================================================
+# 4. 辅助类和模拟数据
+# 定义一些非数据库模型的类，并创建用于测试的模拟数据
+# ==============================================================================
+class Books:
+    """一个简单的书籍类，用于演示"""
 
-
-
-with app.app_context(): # 应用上下文
-    db.create_all()
-
-
-
-# 实现增删改查操作
-@app.route("/user/add")
-def add_user():
-    # 1、创建ORM对象
-    user = User(username = "Maverick", password = "root")
-    # 将ORM对象添加到db.session中
-    db.session.add(user)
-    # 3、将db.session中的改变同步到数据库中
-    db.session.commit()
-    return render_template("add.html",movies = movies)
-
-@app.route("/user/query")
-def query_user():
-    # 1、get查找
-    # user = User.query.get(1)
-    #     # print(f"{user.id}: {user.username}--{user.password}")
-    # 2、filter_by查找
-    # Query 类列表对象
-    users = User.query.filter_by(username = "Maverick")
-    for user in users:
-        print(user.username)
-    return "数据查找成功"
-
-
-@app.route("/user/update")
-def update_user():
-    user = User.query.filter_by(username = "Maverick").first()
-    user.password = "root1"
-    # 同步到数据库
-    db.session.commit()
-    return "数据修改成功"
-
-@app.route("/user/delete")
-def delete_user():\
-    # 查找
-    # user = User.query.get(1)
-    user = User.query.filter_by(password = "root").first() #可以选择按照键删除
-    # 删除
-    db.session.delete(user)
-    # 同步
-    db.session.commit()
-    return "数据已删除"
-
-@app.route("/article/add")
-def add_article():
-    article1 = Article(title = "Flask 学习", content = "我喜欢学Flask")
-    article1.author = User.query.get(1)
-
-    article2 = Article(title="Django 学习", content="我喜欢学Django")
-    article2.author = User.query.get(1)
-
-    # 添加到session中
-    db.session.add_all([article1, article2])
-    db.session.commit()
-
-    return "文章添加成功"
-
-@app.route("/article/query")
-def query_article():
-    user = User.query.get(1)
-    for article in user.articles:
-        print(article.title)
-    return "文章查找成功"
-
-
-# 创建book类
-class books:
-
-    def __init__(self,name,price):
+    def __init__(self, name, price):
         self.name = name
         self.price = price
 
-@app.route('/')
-def index():
-    signature1 = '<script>alert("Hello")</script>'
-    persons = ['ybx','hh']
-    hello1 = ['h','e','l','l','o']
-    str1 = 'hello world'
-    return render_template('index.html', name = name, movies = movies, signature1 = signature1, persons = persons, hello1 = hello1, str1 = str1)
 
-
-"""
-如果你的这个页面想要做“SEO”优化，就是被搜索引擎搜索到，那么推荐使用path的形式。如果你不在乎，那么就可以使用第二种（查询字符串的形式）
-"""
-# 第一种传参，查询字符串/blog?blog_id=10&username=Alice
-@app.route("/blog")
-def blog_detail():
-     blog_id = request.args.get("blog_id",default=1,type=int)
-     my_name = request.args.get("username",default="Maverick",type=str)
-     return render_template("blog_detail.html",blog_id = blog_id, my_name = my_name,another_information = '今天是2025年6月12日')
-
-#查询字符串的方式传参 2
-@app.route("/book/list",methods=['GET','POST'])
-def hello():
-    # arguements: 参数
-    # request.args: 类字典类型
-    page = request.args.get("page", default=1,type=int) # request能够获取输入的信息，默认值是1
-    return f'<h1>您获取的是第{page}页的图书列表</h1><img src="http://helloflask.com/totoro.gif">'
-
-# 第二种传参，使用动态路由，而且使用了更安全的post方法
-@app.route("/secret_page/", methods = ['POST','GET'])
-def secret():
-    if request.method == "GET":
-        book = books('secrets of the world',price='999')
-        context = {
-            'book': book,
-            'signature' : request.args.get("signature"),
-        }
-        return render_template("secret_page.html", **context)
-    else:
-        return 'success'
-
-# any的用法
-@app.route('/<any(yellow,green):url_path>/<id>/')
-def same_url(url_path,id):
-    if url_path == 'yellow':
-        return f'<h1>黄色界面的{id}</h1>'
-    else:
-        return f'<h1>绿色界面的{id}</h1>'
-
-# jinja的条件控制
-@app.route("/control")
-def age_control():
-    age = request.args.get("age", default= 17, type=int)
-    return render_template("control.html",age = age,movies = movies)
-
-# jinja的模板继承
-@app.route("/child1")
-def child1():
-    return render_template("child_1.html")
-
-# jinja的模板继承2
-@app.route("/child2")
-def child2():
-    return render_template("child_2.html")    
-
-# jinja的静态文件
-@app.route("/static")
-def static_demo():
-    return render_template("static.html")
-     
-
-@app.route('/submit', methods=['POST'])
-def submit():
-    username = request.form.get('username')
-    return f'Hello, {username}!'
-
-@app.route("/user/<name>")
-def user_page(name):
-    return f'<h1>User:{escape(name)}</h1>'
-
-@app.route("/test")
-def test_url_for():
-    # 下面是一些调用示例（请访问 http://localhost:5000/test 后在命令行窗口查看输出的 URL）：
-    print(url_for('hello'))  # 生成 hello 视图函数对应的 URL，将会输出：/
-    # 注意下面两个调用是如何生成包含 URL 变量的 URL 的
-    print(url_for("user_page", name="greyli"))# 输出：/user/greyli
-    print(url_for("user_page", name="peter"))# 输出：/user/peter
-    print(url_for("test_url_for")) # 输出：/test
-    # 下面这个调用传入了多余的关键字参数，它们会被作为查询字符串附加到 URL 后面
-    print(url_for("test_url_for", num=2)) # 输出：/test?num=2
-    return "test page"
-
-@app.route('/goback/<int:year>')
-def go_back(year):
-    return f'<p>Welcome to {2025-year}</p>'
-
-@app.route('/anotherweb')
-def another_website():
-    return '', 302 , {'Location': 'https://www.runoob.com/flask/flask-tutorial.html'}
-
-@app.route('/redirect')
-def redirect_to_another_website():
-    return redirect(url_for('another_website'))
-
-@app.route('/redirect2')
-def redirect_to_another_website2():
-    return redirect("https://github.com/")
-
-# 重定向的一个简单例子,非常有实际意义
-@app.route('/account/login/<id>')
-def login(id):
-    return render_template('login.html')
-
-@app.route('/profile')
-def profile():
-    name1 = request.args.get("name")
-    if not name1:
-        return redirect(url_for('login'))
-    else:
-        return name1
-
+# 使用Faker库生成模拟数据
 fake = Faker()
 name = fake.name()
 movies = [
@@ -282,24 +79,280 @@ movies = [
     {'title': 'The Pork of Music', 'year': '2012'},
 ]
 
-@app.get('/variables')
-def variables():
-    hobby= "玩游戏"
-    my_book = books(name= "good luck",price= 2000)
-    people = {
-        "name" : "龙逍遥",
-        "height" : "185cm"
-    }
-    context = {
-        "hobby" : hobby,
-        "my_book" : my_book,
-        "people" : people,
-    }
-    return render_template("variables.html",**context) #更加清晰,两个星号相当于关键字传参
 
-# 自定义过滤器
+# ==============================================================================
+# 5. 自定义模板过滤器 (Template Filters)
+# 定义所有Jinja2模板中使用的自定义过滤器
+# ==============================================================================
+@app.template_filter("my_cut")
+def cut(value):
+    """自定义过滤器，替换字符串中的'world'"""
+    value = value.replace("world", "ybx")
+    return value
+
+
+@app.template_filter("handle_time")
+def handle_time(time):
+    """
+    一个处理时间的过滤器，根据时间差显示不同的格式。
+    - 小于1分钟: "刚刚"
+    - 小于1小时: "xx分钟前"
+    - 小于1天: "xx小时前"
+    - 小于30天: "xx天前"
+    - 超过30天: 显示具体日期
+    """
+    if isinstance(time, datetime.datetime):
+        now = datetime.datetime.now()
+        timestamp = (now - time).total_seconds()
+        if timestamp < 60:
+            return "刚刚"
+        elif 60 <= timestamp < 3600:
+            minutes = int(timestamp / 60)
+            return f"{minutes}分钟前"
+        elif 3600 <= timestamp < 86400:
+            hours = int(timestamp / 3600)
+            return f"{hours}小时前"
+        elif 86400 <= timestamp < 2592000:
+            days = int(timestamp / 86400)
+            return f"{days}天前"
+        else:
+            return time.strftime("%Y-%m-%d, %H:%M:%S")
+    return time
+
+
 @app.template_filter("dateformat")
 def dateformat(value, format="%Y-%m-%d %H:%M"):
-    return value.strftime(format)
+    """格式化日期的过滤器"""
+    if isinstance(value, datetime.datetime):
+        return value.strftime(format)
+    return value
 
 
+# ==============================================================================
+# 6. 视图函数 (Routes / Views)
+# 定义应用的URL路由和对应的处理函数
+# ==============================================================================
+
+# --- 主页和基础功能 ---
+@app.route('/')
+def index():
+    signature1 = '<script>alert("Hello")</script>'
+    persons = ['ybx', 'hh']
+    hello1 = list('hello')  # 将字符串转换为列表
+    str1 = 'hello world'
+    # 修正: 使用 datetime.datetime 创建对象
+    create_time = datetime.datetime(2025, 6, 20, 16, 0, 0)
+
+    context = {
+        'name': name,
+        'movies': movies,
+        'signature1': signature1,
+        'persons': persons,
+        'hello1': hello1,
+        'str1': str1,
+        'create_time': create_time,
+        'person' : {
+            'username': 'ybx',
+            'age' : 18,
+            'country': 'china',
+        }
+    }
+    # keys() -> iterkeys
+    # values() -> itervalues
+    # items -> iteritems
+    return render_template('index.html', **context)
+
+
+@app.get('/variables')
+def variables():
+    context = {
+        "hobby": "玩游戏",
+        "my_book": Books(name="good luck", price=2000),
+        "people": {"name": "龙逍遥", "height": "185cm"},
+    }
+    return render_template("variables.html", **context)
+
+
+# --- 数据库操作 (CRUD) ---
+@app.route("/user/add")
+def add_user():
+    user = User(username="Maverick", password="root")
+    db.session.add(user)
+    db.session.commit()
+    return "用户添加成功"
+
+
+@app.route("/user/query")
+def query_user():
+    users = User.query.filter_by(username="Maverick").all()
+    for user in users:
+        print(f"查询到用户: {user.username}")
+    return "数据查找成功 (请查看控制台)"
+
+
+@app.route("/user/update")
+def update_user():
+    user = User.query.filter_by(username="Maverick").first()
+    if user:
+        user.password = "root_updated"
+        db.session.commit()
+        return "数据修改成功"
+    return "未找到要修改的用户"
+
+
+@app.route("/user/delete")
+def delete_user():
+    user = User.query.filter_by(password="root").first()
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        return "数据已删除"
+    return "未找到要删除的用户"
+
+
+@app.route("/article/add")
+def add_article():
+    user = User.query.get(1)
+    if user:
+        article1 = Article(title="Flask 学习", content="我喜欢学Flask", author=user)
+        article2 = Article(title="Django 学习", content="我喜欢学Django", author=user)
+        db.session.add_all([article1, article2])
+        db.session.commit()
+        return "文章添加成功"
+    return "未找到ID为1的用户，无法添加文章"
+
+
+@app.route("/article/query")
+def query_article():
+    user = User.query.get(1)
+    if user:
+        for article in user.articles:
+            print(f"用户 '{user.username}' 的文章: {article.title}")
+        return "文章查找成功 (请查看控制台)"
+    return "未找到ID为1的用户"
+
+
+# --- 模板功能演示 ---
+@app.route("/control")
+def age_control():
+    age = request.args.get("age", default=17, type=int)
+    return render_template("control.html", age=age, movies=movies)
+
+
+@app.route("/child1")
+def child1():
+    return render_template("child_1.html")
+
+
+@app.route("/child2")
+def child2():
+    return render_template("child_2.html")
+
+
+@app.route("/static")
+def static_demo():
+    return render_template("static.html")
+
+
+# --- 路由和请求处理演示 ---
+@app.route("/blog")
+def blog_detail():
+    blog_id = request.args.get("blog_id", default=1, type=int)
+    my_name = request.args.get("username", default="Maverick", type=str)
+    return render_template("blog_detail.html", blog_id=blog_id, my_name=my_name)
+
+
+@app.route("/book/list")
+def book_list():
+    page = request.args.get("page", default=1, type=int)
+    return f'<h1>您获取的是第{page}页的图书列表</h1><img src="http://helloflask.com/totoro.gif">'
+
+
+@app.route("/secret_page/", methods=['GET', 'POST'])
+def secret_page():
+    if request.method == "GET":
+        book = Books('Secrets of the World', price='999')
+        context = {
+            'book': book,
+            'signature': request.args.get("signature"),
+        }
+        return render_template("secret_page.html", **context)
+    else:
+        username = request.form.get('username')
+        return f'Success, {escape(username)}!'
+
+
+@app.route('/<any(yellow, green):url_path>/<id>/')
+def same_url(url_path, id):
+    return f'<h1 style="color:{url_path};">这是{url_path}界面的第{id}页</h1>'
+
+
+@app.route("/user/<name>")
+def user_page(name):
+    return f'<h1>User: {escape(name)}</h1>'
+
+
+@app.route("/test_url")
+def test_url_for():
+    print(url_for('index'))
+    print(url_for("user_page", name="greyli"))
+    print(url_for("test_url_for", next='/'))
+    return "URL生成测试 (请查看控制台)"
+
+
+@app.route('/goback/<int:year>')
+def go_back(year):
+    # 修正: 动态获取当前年份
+    current_year = datetime.datetime.now().year
+    return f'<p>Welcome to {current_year - year}</p>'
+
+
+# --- 重定向功能演示 ---
+@app.route('/anotherweb')
+def another_website():
+    return '这是一个外部网站的模拟页面。'
+
+
+@app.route('/redirect')
+def redirect_to_another_website():
+    return redirect(url_for('another_website'))
+
+
+@app.route('/github')
+def redirect_to_github():
+    return redirect("https://github.com/")
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # 实际项目中这里会有登录验证逻辑
+        return redirect(url_for('profile', name=request.form.get('username', 'Guest')))
+    return render_template('login.html')
+
+
+@app.route('/profile')
+def profile():
+    name = request.args.get("name")
+    if not name:
+        return redirect(url_for('login'))
+    return f"<h1>欢迎, {escape(name)}!</h1>"
+
+@app.route('/index_2')
+def index_2():
+    return render_template("index_2.html")
+
+
+
+# ==============================================================================
+# 7. 应用启动
+# 作为脚本直接运行时，创建数据库表并启动开发服务器
+# ==============================================================================
+if __name__ == '__main__':
+    # 使用应用上下文来确保db操作有正确的环境
+    with app.app_context():
+        # 创建所有定义的数据库表（如果它们尚不存在）
+        db.create_all()
+    # 启动Flask的开发服务器
+    # debug=True会在代码修改后自动重载，并提供详细的错误页面
+    app.run(debug=True, port=5000)

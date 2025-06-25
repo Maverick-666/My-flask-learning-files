@@ -1,18 +1,39 @@
+{% import 'forms.html' as forms %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>测试一下变量,以及宏和import语句</title>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/style2.css') }}">
+    <style>
+        .form-field {
+            display: flex; /* 启用 Flexbox 布局 */
+            align-items: center; /* 垂直居中对齐 */
+            margin-bottom: 8px; /* 增加行间距 */
+        }
+        .form-field label {
+            width: 80px; /* 给标签一个固定的宽度 */
+            flex-shrink: 0; /* 防止标签被压缩 */
+        }
+    </style>
 </head>
 <body>
-{% import 'forms.html' as forms %}
-<dl>
-    <dt>Username</dt>
-    <dd>{{ forms.input('username')}}</dd>
-    <dt>Password</dt>
-    <dd>{{ forms.input('password',type='password')}}</dd>
-</dl>
-<p>{{ forms.textarea('comment') }}</p>
+    <form>
+        <div class="form-field">
+            <label for="username">用户名：</label>
+            {{ forms.input('username')}}
+        </div>
+        <div class="form-field">
+            <label for="password">密码：</label>
+            {{ forms.input('password', type='password')}}
+        </div>
+        <div class="form-field">
+            <label style="width: 80px;"></label>
+            {{ forms.input(value="提交", type="submit") }}
+        </div>
+    </form>
+
+    <p>{{ forms.textarea('comment') }}</p>
 <h1>
     {{ people.name }} 是一个 {{ people.height }}  的人，他喜欢{{ hobby }}也喜欢看{{ my_book.name }},价格是{{ my_book.price }}元
 </h1>

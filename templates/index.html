@@ -3,51 +3,105 @@
 <head>
     <meta charset="utf-8">
     <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/style1.css') }}">
+    <script src="{{ url_for("static",filename="js/index.js") }}"></script>
     <title>{{ name }}'s Watchlist</title>
 </head>
 <body>
+{#set设置变量#}
+{% set welcome = '泥嚎'%}
+<h1>{{ welcome }}</h1>
 
+{#with设置变量#}
+{% with welcome2 = '泥嚎呀' %}
+<h1>{{ welcome2 }}</h1>
+{% endwith %}
 
-{#autoescape off会关闭自动转义，比如'<'会不被转译成特殊字符#}
-{#加了escape会启动自动转义#}
-{% autoescape off %}
-    <p>个性签名：{{ signature1 |escape }}</p>
-{% endautoescape %}
-{#safe也会关闭自动转义标签#}
-<p>个性签名：{{ signature1 | safe }}</p>
+{#with设置变量2#}
+{% with %}
+{% set welcome3 = '泥嚎泥嚎'%}
+    <h1>{{ welcome3 }}</h1>
+{% endwith %}
 
-<h1>{{ persons | first }}</h1>
-<h1>{{ persons | last }}</h1>
-<h1>{{ hello1 | replace('l','x') }}</h1>
-<h1>{{ str1 | truncate(length=4) }}</h1>
-{#去除所有标签#}
-<h1>{{ signature1 | striptags }}</h1>
+{# --- 过滤器演示 --- #}
+{#escape转义#}
+<p>个性签名 (不转义): {{ signature1 | safe }}</p>
+<h1>列表第一个元素: {{ persons | first }}</h1>
+<h1>自定义过滤器 (my_cut): {{ str1 | my_cut }}</h1>
+<h1>自定义过滤器 (handle_time): {{ create_time | handle_time }}</h1>
+<hr>
 
-    <h2>
-        <img alt="Avatar" class="avatar" src="{{ url_for('static', filename='images/avatar.png') }}">
-        {{ name }}'s Watchlist
-    </h2>
-    
-    {# 使用 length 过滤器获取 movies 变量的长度 #}
-    <p>{{ movies|length }} Titles</p>
+{# --- 表格演示 --- #}
 
+<h3>用户信息</h3>
+<table>
+    <thead>
+    <tr>
+        {# 我们直接显示 person 字典的键作为表头 #}
+        <th>用户名</th>
+        <th>年龄</th>
+        <th>国家</th>
+    </tr>
+    </thead>
+    <tbody>
+        {# 修正: 将所有单元格 td 包裹在一个 tr 标签内 #}
+        <tr>
+            <td>{{ person.username }}</td>
+            <td>{{ person.age }}</td>
+            <td>{{ person.country }}</td>
+        </tr>
+    </tbody>
+</table>
 
-{#      {{ 用来存放变量 }} #}
-{#    {% 用来执行函数或逻辑代码 %} #}
-{#    <p><a href="/login/">登录</a></p>#}
-    <p><a href="{{ url_for('login',ref='/',id='1') }}">登录</a></p>
+<hr>
 
+<h3>电影列表</h3>
+<table>
+    <thead>
+    <tr>
+        <th>序号</th>
+        <th>标题 (Title)</th>
+        <th>上映时间 (Year)</th>
+    </tr>
+    </thead>
+    <tbody>
+        {# 修正1: 直接遍历 'movies' 列表 #}
+        {% for movie in movies %}
+            {# 修正2: 将 tr 标签完整地放在循环内部 #}
+            <tr {% if loop.first %} style="background-color: cadetblue;" {% elif loop.last %}style="background-color: crimson;"{% endif %}>
 
-    <ul class="movie-list">
-        {% for movie in movies %}  {# 迭代 movies 变量 #}
-        <li>{{ movie.title }} - {{ movie.year }}</li>  {# 等同于 movie['title'] #}
-        {% endfor %}  {# 使用 endfor 标签结束 for 语句 #}
-    </ul>
-    <img alt="Walking Totoro" src="{{ url_for('static', filename='images/totoro.gif') }}">
-    <footer>
-        <small>&copy; 2018 <a href="http://helloflask.com/book/3">HelloFlask</a></small>
-    </footer>
+                {# 修正3: loop.index 是属性 #}
+                <td>{{ loop.index }}</td>
+                {# 修正4: 通过 key 访问字典中的值 #}
+                <td>{{ movie.title }}</td>
+                <td>{{ movie.year }}</td>
+            </tr> {# 修正5: 每一行的 tr 标签在循环内闭合 #}
+        {% endfor %}
+    </tbody>
+</table>
+
+<hr>
+
+{# --- 基础内容 --- #}
+<h2>
+    <img alt="Avatar" class="avatar" src="{{ url_for('static', filename='images/avatar.png') }}">
+    {{ name }}'s Watchlist
+</h2>
+
+<p>{{ movies|length }} Titles</p>
+
+<p><a href="{{ url_for('login', ref='/', id='1') }}">登录</a></p>
+
+<ul class="movie-list">
+    {% for movie in movies %}
+    <li>{{ movie.title }} - {{ movie.year }}</li>
+    {% endfor %}
+</ul>
+
+<img alt="Walking Totoro" src="{{ url_for('static', filename='images/totoro.gif') }}">
+<footer>
+    <small>&copy; 2018 <a href="http://helloflask.com/book/3">HelloFlask</a></small>
+</footer>
 </body>
 </html>
 
