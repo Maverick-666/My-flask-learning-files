@@ -1,10 +1,14 @@
 {%extends "base.html"%}
 
 {%block title%}
+{#    继承父模板的其他代码#}
+    {{ super() }}
 Jinja的静态文件
 {%endblock%}
 
 {%block content%}
+{#    继承title中的代码#}
+    {{ self.title() }}
 <img src="{{ url_for('static',filename = 'images/avatar.png')}}" alt="">
 <script src="{{url_for('static',filename='js/myjava.js')}}"></script>
 {%endblock%}
